@@ -13,12 +13,12 @@ fn main() {
 
     let now = Instant::now();
 
-    let mut seen = bitbox![0; 9_999_999_999];
+    let mut seen = bitbox![0; 10_000_000_000];
     let mut dupes: u32 = 0;
 
     for x in digits.chunks(10) {
-        let y = x.iter().fold(0_u32, |a, e| {
-            a * 10 + ascii_to_digit::<u8>(*e).unwrap() as u32
+        let y = x.iter().fold(0_u64, |a, e| {
+            a * 10 + ascii_to_digit::<u8>(*e).unwrap() as u64
         });
         // If already seen
         if seen[y as usize] {
