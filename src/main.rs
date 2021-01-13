@@ -1,10 +1,9 @@
-use std::collections::HashMap;
-// use indicatif::{ProgressBar, ProgressStyle};
-use rayon::prelude::*;
-use std::time::Instant;
-use atoi::{ascii_to_digit};
-use std::fs::File;
+use atoi::ascii_to_digit;
+use bitvec::prelude::*;
 use memmap::Mmap;
+use std::collections::HashMap;
+use std::fs::File;
+use std::time::Instant;
 
 fn main() {
     let digits = unsafe {
@@ -12,40 +11,22 @@ fn main() {
         Mmap::map(&file).unwrap()
     };
 
-    // let mut combinations = HashMap::new();
-    //
-    // for chunk in digits.chunks(10) {
-    //     let n = chunk.iter().fold(0_u32, |acc, e| acc * 10 + *e as u32);
-    //     let seen = combinations.entry(n).or_insert(0);
-    //     *seen += 1;
-    //
-    //     bar.inc(1);
-    // }
-
     let now = Instant::now();
 
-    let combinations = digits.par_chunks(10)
-        .map(|n| {
-            n.iter().fold(0_u32, |acc, e| acc * 10 + ascii_to_digit::<u8>(*e).unwrap() as u32)
-        })
-        .fold(|| HashMap::<u32, u32>::new(),
-              |mut a, v| {
-                  let seen = a.entry(v).or_insert(0);
-                  *seen += 1;
-                  a
-              })
-        .reduce(|| HashMap::new(),
-        |one, two| {
-            two.iter().fold(one, |mut a, (k, v2)| {
-                let v1 = a.entry(*k).or_insert(0);
-                *v1 += v2;
-                a
-            })
-        });
+    let mut seen = bitbox![0; 9_999_999_999];
+    let mut dupes: u32 = 0;
 
-    let dupes = combinations.into_par_iter()
-        .map(|(_, vs)| vs - 1)
-        .reduce(|| 0_u32, |a, b| a + b);
+    for x in digits.chunks(10) {
+        let y = x.iter().fold(0_u32, |a, e| {
+            a * 10 + ascii_to_digit::<u8>(*e).unwrap() as u32
+        });
+        // If already seen
+        if seen[y as usize] {
+            dupes += 1;
+        } else {
+            *seen.get_mut(y as usize).unwrap() = true;
+        }
+    }
 
     let elapsed = now.elapsed();
 
