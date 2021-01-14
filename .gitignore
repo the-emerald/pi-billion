@@ -1,1 +1,7 @@
 /target
+
+# Ignore pi
+*.txt
+
+# IntelliJ IDEA
+.idea/

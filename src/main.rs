@@ -41,7 +41,7 @@ impl Segment {
         let offset = val % PER_SEGMENT_SIZE as u64;
         Location {
             0: index as usize,
-            1: offset
+            1: offset,
         }
     }
 
@@ -50,7 +50,10 @@ impl Segment {
     }
 
     fn mark_as_seen(&mut self, offset: u64) {
-        *self.bitbox.get_mut(offset as usize).expect("bitbox out of bounds") = true;
+        *self
+            .bitbox
+            .get_mut(offset as usize)
+            .expect("bitbox out of bounds") = true;
     }
 }
 
@@ -104,7 +107,6 @@ fn main() {
     for thread in threads {
         thread.join().unwrap();
     }
-
 
     let elapsed = now.elapsed();
 

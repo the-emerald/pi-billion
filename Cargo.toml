@@ -1,5 +1,5 @@
 [package]
-name = "pi-sequence"
+name = "pi-duplicates"
 version = "0.1.0"
 authors = ["emerald"]
 edition = "2018"
