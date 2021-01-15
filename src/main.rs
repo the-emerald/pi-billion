@@ -1,20 +1,26 @@
+use std::fs::File;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
+use std::thread;
+use std::time::Instant;
+
 use atoi::ascii_to_digit;
 use bitvec::macros::internal::core::sync::atomic::AtomicU32;
 use bitvec::prelude::*;
 use memmap::Mmap;
 use once_cell::sync::Lazy;
-use std::fs::File;
-use std::sync::atomic::Ordering;
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::Instant;
+use parking_lot::Mutex;
+
+// For some reason jemalloc seems to be faster.
+#[global_allocator]
+static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 static PI_FILE: Lazy<Mmap> = Lazy::new(|| unsafe {
     let file = File::open("src/pi-billion-trunc.txt").unwrap();
     Mmap::map(&file).unwrap()
 });
 
-const NUMBER_SEGMENTS: usize = 50_000;
+const NUMBER_SEGMENTS: usize = 5000;
 const TOTAL_BITBOX_SIZE: usize = 10_000_000_000;
 const PER_SEGMENT_SIZE: usize = TOTAL_BITBOX_SIZE / NUMBER_SEGMENTS;
 const ONE_BILLION: usize = 1_000_000_000;
@@ -78,7 +84,7 @@ fn main() {
     let now = Instant::now();
     let mut threads = vec![];
 
-    for thread_sized_chunk in PI_FILE.chunks(ONE_BILLION / 16) {
+    for thread_sized_chunk in PI_FILE.chunks(ONE_BILLION / 12) {
         let bitbox = bitboxes.clone();
         let duplicates = duplicates.clone();
 
@@ -89,9 +95,8 @@ fn main() {
                 });
 
                 let location = Segment::determine_loc(val);
-                let segment = &mut bitbox[location.index()]
-                    .lock()
-                    .expect("could not acquire mutex");
+                let segment = &mut bitbox[location.index()].lock();
+                // .expect("could not acquire mutex");
 
                 if segment.is_seen(location.offset()) {
                     duplicates.fetch_add(1, Ordering::SeqCst);
